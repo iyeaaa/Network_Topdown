@@ -1,25 +1,32 @@
-import socket
 from socket import *
 from datetime import datetime
 
-# UDP 패킷을 생성하기 위한 UDP 소켓 생성
 clientSocket = socket(AF_INET, SOCK_DGRAM)
+clientSocket.settimeout(1)
+rttlist = []
+losscnt = 0
 
-for i in range(1, 11):
+for sequence_number in range(1, 11):
+    send_time = datetime.now().timestamp()
+    ping_message = "Ping " + str(sequence_number) + " " + str(send_time)
+    clientSocket.sendto(ping_message.encode(), ('127.0.0.1', 12000))
+
     try:
-        sequence_number = str(i)
-        sendTime = datetime.now()
-        message = "Ping " + sequence_number + " " + str(sendTime)
-
-        clientSocket.settimeout(1)
-        clientSocket.sendto(message.encode(), ("", 12000))
-        modifiedMessage, serverAddress = clientSocket.recvfrom(1024)
-        recvTime = datetime.now()
-
-        diffTime = recvTime - sendTime
-        print(sequence_number, "\tRTT:", diffTime, "\tmessage:", modifiedMessage.decode())
+        message = clientSocket.recv(1024)
+        timeDiff = datetime.now().timestamp() - send_time
+        rttlist.append(timeDiff)
+        print(sequence_number, "RTT:", timeDiff)
 
     except:
-        print(i, "\tRequest timed out")
+        print(sequence_number, "Request timed out")
+        losscnt += 1
+
+print()
+
+if rttlist:
+    print("minimum:", min(rttlist))
+    print("maximum:", max(rttlist))
+    print("average:", sum(rttlist)/len(rttlist))
+    print("loss rate:", str(losscnt/10*100) + "%")
 
 clientSocket.close()
