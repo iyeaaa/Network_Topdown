@@ -1,37 +1,37 @@
 
 from socket import *
-import threading
+from threading import *
 
 
-def sendhtml():
+def sendmessage(connectionsocket: socket):
     try:
-        message = connectionSocket.recv(1024).decode()
+        message = connectionsocket.recv(1024)
         filename = message.split()[1]
         f = open(filename[1:])
         outputdata = f.read()
+        f.close()
 
-        # Send one HTTP header line into socket
-        connectionSocket.send("HTTP/1.1 200 OK\r\n\r\n".encode())
-        connectionSocket.send(outputdata.encode())
-        connectionSocket.send("\r\n".encode())
+        connectionsocket.send("HTTP/1.1 200 OK\r\n".encode())
+        connectionsocket.send("\r\n".encode())
+        connectionsocket.send(outputdata.encode())
+        connectionsocket.send("\r\n".encode())
 
-        connectionSocket.close()
+        connectionsocket.close()
 
     except IOError:
-        # Send response message for file not found
-        connectionSocket.send("HTTP/1.1 404 Not Found\r\n".encode())
-        # Close client socket
-        connectionSocket.close()
+        connectionsocket.send("HTTP/1.1 404 Not Found".encode())
+        connectionsocket.send("\r\n".encode())
+        connectionsocket.close()
 
 
-serverPort = 6789
-
+# Welcome Socket 생성
 serverSocket = socket(AF_INET, SOCK_STREAM)
-serverSocket.bind(('', serverPort))
-serverSocket.listen(1)
+serverSocket.bind(("", 80))
+serverSocket.listen(40)
 
 while True:
-    print('Ready to serve...')
+    print("Ready to serve...")
+
+    # connectionSocket : 핸드셰이킹동안 생성한 연결소켓이다.
     connectionSocket, addr = serverSocket.accept()
-    newThread = threading.Thread(target=sendhtml)
-    newThread.start()
+    Thread(target=sendmessage, args=[connectionSocket]).start()
